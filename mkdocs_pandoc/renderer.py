@@ -94,7 +94,7 @@ class Renderer(object):
                 with open(p, "r") as rf:
                     lines = rf.readlines()
                     f.writelines(lines)
-                    if not lines[-1].endswith("\n"):
+                    if lines and not lines[-1].endswith("\n"):
                         f.write("\n")
                     f.write("\n")
 
