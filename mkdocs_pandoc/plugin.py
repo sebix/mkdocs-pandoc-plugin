@@ -20,6 +20,7 @@ class PandocPlugin(BasePlugin):
         ("combined_output_path", config_options.Type(str, default="pandoc/combined.pdf")),
         ("pandoc_extra_args", config_options.Type(str, default="")),
         ("pandoc_args", config_options.Type(dict, default={})),
+        ("pandoc_template", config_options.Type(str, default="")),
     )
 
     def __init__(self):
@@ -52,7 +53,7 @@ class PandocPlugin(BasePlugin):
         self.to_extension = pandoc_args.get("to", "pdf")
 
         self.renderer = Renderer(
-            self.combined, docs_dir=config["docs_dir"], extra_args=self.config["pandoc_extra_args"], **pandoc_args
+            self.combined, docs_dir=config["docs_dir"], extra_args=self.config["pandoc_extra_args"], template=self.config["pandoc_template"], **pandoc_args
         )
 
     def on_nav(self, nav, config, files):
