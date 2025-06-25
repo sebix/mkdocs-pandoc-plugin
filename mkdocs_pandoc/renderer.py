@@ -1,6 +1,8 @@
 import os
 import logging
 import contextlib
+from pathlib import Path
+from typing import List
 
 log = logging.getLogger("mkdocs.plugins.pandoc")
 
@@ -16,9 +18,9 @@ def run_in_path(p):
 
 
 class Pandoc(object):
-    def __init__(self, in_file, out_file, work_dir, extra_args: str = "", **opts):
+    def __init__(self, in_files: List[str], out_file, work_dir, extra_args: str = "", **opts):
         self.opts = opts
-        self.in_file = in_file
+        self.in_files = in_files
         self.out_file = out_file
         self.work_dir = work_dir
         self.extra_args = extra_args
@@ -34,10 +36,9 @@ class Pandoc(object):
 
     def write(self, *args):
         args = [self.extra_args] + list(args) + self.args
-        self.run(args, "-o", self.out_file, self.in_file)
+        self.run(args, "-o", self.out_file, *self.in_files)
 
-    def run(self, args, *argv):
-        args = [args] if isinstance(args, str) else args
+    def run(self, args: List, *argv):
         args = ["pandoc"] + args + list(argv)
         command = " ".join(args)
         with run_in_path(self.work_dir):
@@ -65,7 +66,8 @@ class Renderer(object):
         if os.path.isfile(template) and os.path.exists(template):
             self.args["template"] = template
 
-    def write_pandoc(self, mk_filename: str, out_filename: str):
+    def write_pandoc(self, mk_filename: List[str], out_filename: str):
+        mk_filename = [mk_filename] if not isinstance(mk_filename, list) else mk_filename
         pandoc = Pandoc(
             mk_filename,
             out_filename,
@@ -83,19 +85,4 @@ class Renderer(object):
             pass
 
     def write_combined_pandoc(self, output_path: str):
-        combined_md = output_path + ".md"
-
-        with open(combined_md, "w") as f:
-            for p in self.pages:
-                if p is None:
-                    log.error("Unexpected error - not all pages were rendered properly")
-                    continue
-
-                with open(p, "r") as rf:
-                    lines = rf.readlines()
-                    f.writelines(lines)
-                    if not lines[-1].endswith("\n"):
-                        f.write("\n")
-                    f.write("\n")
-
-        self.write_pandoc(combined_md, output_path)
+        self.write_pandoc(self.pages, output_path)

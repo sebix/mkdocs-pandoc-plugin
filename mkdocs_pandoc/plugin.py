@@ -48,7 +48,7 @@ class PandocPlugin(BasePlugin):
         for k, v in self.config["pandoc_args"].items():
             k = k.replace("-", "_")
             pandoc_args[k] = str(v)
-        
+
         self.to_extension = pandoc_args.get("to", "pdf")
 
         self.renderer = Renderer(
@@ -90,23 +90,16 @@ class PandocPlugin(BasePlugin):
         os.makedirs(pandoc_path, exist_ok=True)
 
         filename = os.path.splitext(os.path.basename(src_path))[0]
-        output_file_name = f"{filename}.{self.to_extension}" 
+        output_file_name = f"{filename}.{self.to_extension}"
         output_file = os.path.join(pandoc_path, output_file_name)
 
         try:
             if self.combined:
                 self.renderer.add_doc(page.file.src_path, page.file.abs_src_path)
                 combined_pandoc_path = os.path.join(site_dir, self.config["combined_output_path"])
-                output_content = modify_html(
-                    output_content,
-                    os.path.relpath(combined_pandoc_path, path),
-                    label=os.path.basename(combined_pandoc_path),
-                )
 
             else:
                 self.renderer.write_pandoc(page.file.abs_src_path, output_file)
-
-                output_content = modify_html(output_content, os.path.relpath(output_file, path), label=f"{filename}.{self.to_extension}")
 
         except Exception as e:
             log.error(f"Error converting {src_path} to {self.to_extension}: {e}", file=sys.stderr)
