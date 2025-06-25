@@ -1,6 +1,7 @@
 import os
 import logging
 import contextlib
+from pathlib import Path
 
 log = logging.getLogger("mkdocs.plugins.pandoc")
 
@@ -62,10 +63,16 @@ class Renderer(object):
         self.args = args
         self.extra_args = extra_args
 
-        if os.path.isfile(template) and os.path.exists(template):
+        template = Path(template)
+
+        if template.is_file() and template.exists():
+            # usability: if the template path is relative, pass a path that is relative to the current working directory. Otherwise pandoc would search for it in system directories.
+            if not template.is_absolute():
+                template = template.cwd() / template
             self.args["template"] = template
 
     def write_pandoc(self, mk_filename: str, out_filename: str):
+        print(f'output file: {out_filename} - Writing combined markdown')
         pandoc = Pandoc(
             mk_filename,
             out_filename,
