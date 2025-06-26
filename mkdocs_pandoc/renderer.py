@@ -1,6 +1,8 @@
 import os
 import logging
 import contextlib
+import subprocess
+from typing import List
 
 log = logging.getLogger("mkdocs.plugins.pandoc")
 
@@ -16,7 +18,7 @@ def run_in_path(p):
 
 
 class Pandoc(object):
-    def __init__(self, in_file, out_file, work_dir, extra_args: str = "", **opts):
+    def __init__(self, in_files: List[str], out_file, work_dir, extra_args: List[str] = [], **opts):
         self.opts = opts
         self.in_file = in_file
         self.out_file = out_file
@@ -33,16 +35,13 @@ class Pandoc(object):
         return args
 
     def write(self, *args):
-        args = [self.extra_args] + list(args) + self.args
-        self.run(args, "-o", self.out_file, self.in_file)
+        args = self.extra_args + list(args) + self.args
+        self.run(args, "-o", self.out_file, *self.in_files)
 
-    def run(self, args, *argv):
-        args = [args] if isinstance(args, str) else args
+    def run(self, args: List, *argv):
         args = ["pandoc"] + args + list(argv)
-        command = " ".join(args)
-        with run_in_path(self.work_dir):
-            log.debug(f"{os.getcwd()}> {command}")
-            os.system(command)
+        log.debug(f"{os.getcwd()}> {' '.join(args)}")
+        proc = subprocess.run(args, check=True, cwd=self.work_dir)
 
 
 class Renderer(object):
@@ -60,12 +59,13 @@ class Renderer(object):
         self.pgnum = 0
         self.pages = []
         self.args = args
-        self.extra_args = extra_args
+        self.extra_args = extra_args.split(' ')
 
         if os.path.isfile(template) and os.path.exists(template):
             self.args["template"] = template
 
-    def write_pandoc(self, mk_filename: str, out_filename: str):
+    def write_pandoc(self, mk_filename: List[str], out_filename: str):
+        mk_filename = [mk_filename] if not isinstance(mk_filename, list) else mk_filename
         pandoc = Pandoc(
             mk_filename,
             out_filename,
